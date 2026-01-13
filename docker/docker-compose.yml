@@ -7,13 +7,9 @@ services:
     container_name: app-${COLOR:-blue}
     ports:
       - "${APP_PORT:-3000}:3000"
-    # Option 1 : On force la lecture du .env à la racine
-    env_file:
-      - ../.env
     environment:
-      # Option 2 : Sécurité totale, on définit l'URL en dur si la variable est vide
-      - DATABASE_URL=${DATABASE_URL:-postgresql://admin:password@db:5432/conduit}
-      - JWT_SECRET=${JWT_SECRET:-mon_secret_de_test}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
       - NODE_ENV=production
     depends_on:
       db:
