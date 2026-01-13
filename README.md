@@ -1,4 +1,4 @@
-# Documentation Technique - Binôme B (Infrastructure & CD)
+# Documentation Technique -  (Infrastructure & CD)
 
 Cette documentation détaille la mise en œuvre de la conteneurisation, de la stratégie de déploiement et de la sécurité du projet.
 
