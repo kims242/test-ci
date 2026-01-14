@@ -39,7 +39,7 @@ jobs:
 
     - name: Tests Unitaires
       run: npm test
-      # Cela lancera "jest". Assure-toi d'avoir des tests qui ne nécessitent pas la BDD réelle 
+      # Cela lancera "jest". Assure-toi d'avoir des tests qui ne nécessitent pas la BDD  
       # ou d'utiliser des "mocks" pour cette étape.
 
   # Job 2 : Build Docker (S'exécute seulement si le Job 1 réussit)
