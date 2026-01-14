@@ -13,7 +13,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: ./app # On se place dans le dossier du code source
+        working-directory: ./app # On se place dans le dossier du code sourc
 
     strategy:
       matrix:
