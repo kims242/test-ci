@@ -11,25 +11,23 @@ jobs:
   ci:
     name: Lint + Test + Build Docker
     runs-on: ubuntu-latest
-
     services:
-      db:
-        image: postgres:14-alpine
+      postgres:
+        image: postgres:15
         env:
-          POSTGRES_USER: admin
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: conduit
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: testdb
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U admin -d conduit"
-          --health-interval 5s
+          --health-cmd pg_isready
+          --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://admin:password@localhost:5432/conduit
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      DATABASE_URL: postgres://test:test@localhost:5432/testdb
 
     steps:
       - name: Checkout code
@@ -44,19 +42,17 @@ jobs:
         working-directory: app
         run: npm ci
 
-      - name: Lint
+      - name: Prisma migrate
         working-directory: app
-        run: npx eslint . --max-warnings=0
+        run: npx prisma migrate deploy
 
-      # ✅ Reset database before tests
-      - name: Reset database
-        working-directory: app
-        run: npx prisma migrate reset --force --skip-seed
-
-      # ✅ Seed test data
       - name: Seed database
         working-directory: app
         run: npx prisma db seed
+
+      - name: Lint
+        working-directory: app
+        run: npx eslint . --max-warnings=0
 
       - name: Run tests
         working-directory: app
@@ -91,12 +87,11 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
-          ssh -o StrictHostKeyChecking=no user@YOUR_SERVER_IP "
+          ssh user@YOUR_SERVER_IP "
           docker pull melvyn92/app:${{ github.sha }}
           docker stop app || true
           docker rm app || true
           docker run -d -p 3000:3000 \
-            --name app \
             --env DATABASE_URL=${DATABASE_URL} \
             --env JWT_SECRET=${JWT_SECRET} \
             melvyn92/app:${{ github.sha }}"
