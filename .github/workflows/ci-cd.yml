@@ -1,6 +1,5 @@
 name: CI/CD Pipeline
 
-# Déclenche sur push ou PR sur main, ou manuellement
 on:
   push:
     branches: [main]
@@ -13,7 +12,6 @@ jobs:
     name: Lint + Test + Build Docker
     runs-on: ubuntu-latest
 
-    # 1️⃣ Service PostgreSQL pour les tests
     services:
       db:
         image: postgres:14-alpine
@@ -34,29 +32,31 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
-      # 2️⃣ Checkout du code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 3️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 4️⃣ Installer les dépendances et Lint
-      - name: Install dependencies & Lint
+      - name: Install dependencies
         working-directory: app
-        run: |
-          npm ci
-          npx eslint . --max-warnings=0
+        run: npm ci
 
-      # 5️⃣ Lancer les tests
+      - name: Lint
+        working-directory: app
+        run: npx eslint . --max-warnings=0
+
+      # ✅ Appliquer les migrations Prisma avant les tests
+      - name: Run Prisma Migrations
+        working-directory: app
+        run: npx prisma migrate deploy
+
       - name: Run Tests
         working-directory: app
         run: npm test
 
-      # 6️⃣ Build Docker
       - name: Build Docker image
         run: |
           docker build \
@@ -64,14 +64,12 @@ jobs:
             -t melvyn92/app:${{ github.sha }} \
             -f docker/Dockerfile .
 
-      # 7️⃣ Login Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 8️⃣ Push Docker image
       - name: Push Docker image
         run: |
           docker push melvyn92/app:latest
@@ -82,10 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: ci
     steps:
-      # Checkout du code (optionnel si déploiement distant)
       - uses: actions/checkout@v3
-
-      # Déploiement SSH
       - name: Deploy to remote server
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
