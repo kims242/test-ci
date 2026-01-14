@@ -1,4 +1,4 @@
-import prisma from '../../../prisma/prisma-client';
+import prisma from '../../../../prisma/prisma-client';
 import profileMapper from './profile.utils';
 import HttpException from '../../models/http-exception.model';
 

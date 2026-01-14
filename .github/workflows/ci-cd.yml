@@ -42,13 +42,13 @@ jobs:
         working-directory: app
         run: npm ci
 
-      - name: Prisma migrate
+      - name: Run migrations
         working-directory: app
         run: npx prisma migrate deploy
 
       - name: Seed database
         working-directory: app
-        run: npx prisma db seed
+        run: npm run seed
 
       - name: Lint
         working-directory: app

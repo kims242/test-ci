@@ -1,12 +1,11 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function main() {
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // Crée un utilisateur pour les tests
   await prisma.user.upsert({
     where: { email: 'realworld@me' },
     update: {},
@@ -15,9 +14,11 @@ async function main() {
       username: 'RealWorld',
       password: hashedPassword,
       bio: null,
-      image: 'https://api.realworld.io/images/smiley-cyrus.jpeg'
+      image: 'https://api.realworld.io/images/smiley-cyrus.jpeg',
     },
   });
+
+  console.log('Database seeded ✅');
 }
 
 main()

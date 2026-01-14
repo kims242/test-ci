@@ -1,4 +1,4 @@
-import prisma from '../../../prisma/prisma-client';
+import prisma from '../../../../prisma/prisma-client';
 import { Tag } from './tag.model';
 
 const getTags = async (id?: number): Promise<string[]> => {
