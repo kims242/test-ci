@@ -1,1 +1,79 @@
+name: CI/CD Pipeline
+
+# Déclenche le pipeline sur push et pull_request vers main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # Permet un lancement manuel
+
+jobs:
+  ci:
+    name: Lint + Test + Build Docker
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Récupérer le code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2️⃣ Installer Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # 3️⃣ Installer les dépendances et Lint
+      - name: Install dependencies & Lint
+        run: |
+          npm ci
+          npx eslint . --max-warnings=0
+
+      # 4️⃣ Lancer les tests
+      - name: Run Tests
+        run: npm test
+
+      # 5️⃣ Build Docker
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t melvyn92/app:latest \
+            -t melvyn92/app:${{ github.sha }} \
+            -f docker/Dockerfile .
+
+      # 6️⃣ Login Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 7️⃣ Push Docker image
+      - name: Push Docker image
+        run: |
+          docker push melvyn92/app:latest
+          docker push melvyn92/app:${{ github.sha }}
+
+  deploy:
+    name: Deploy Docker Container
+    runs-on: ubuntu-latest
+    needs: ci  # Déploiement seulement si CI réussi
+    steps:
+      # 1️⃣ Récupérer le code (facultatif si déploiement distant uniquement)
+      - uses: actions/checkout@v3
+
+      # 2️⃣ Déploiement sur serveur via SSH
+      - name: Deploy to remote server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          ssh user@YOUR_SERVER_IP "
+          docker pull melvyn92/app:${{ github.sha }}
+          docker stop app || true
+          docker rm app || true
+          docker run -d -p 3000:3000 \
+            --env DATABASE_URL=${DATABASE_URL} \
+            --env JWT_SECRET=${JWT_SECRET} \
+            melvyn92/app:${{ github.sha }}"
 
