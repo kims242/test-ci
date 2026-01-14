@@ -1,105 +1,64 @@
-name: CI/CD Pipeline
+name: CI Docker Node Postgres
 
 on:
   push:
-    branches: [main]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [ "main", "master" ]
 
 jobs:
-  ci:
-    name: Lint + Test + Build Docker
+  # Job 1 : Qualité et Tests (S'exécute rapidement sans monter tout Docker)
+  qualite-et-tests:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    
+    defaults:
+      run:
+        working-directory: ./app # On se place dans le dossier du code source
 
-    env:
-      DATABASE_URL: postgres://test:test@localhost:5432/testdb
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Récupération du code
+      uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+    - name: Installation de Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './app/package-lock.json'
 
-      - name: Install dependencies
-        working-directory: app
-        run: npm ci
+    - name: Installation des dépendances
+      run: npm install
 
-      # --- Prisma migrations ---
-      - name: Generate Prisma client
-        working-directory: app
-        run: npx prisma generate
+    - name: Analyse du code (Linting)
+      run: npm run lint
+      # Cela lancera la commande "eslint ." définie dans ton package.json
 
-      - name: Create database & run migrations
-        working-directory: app
-        run: |
-          npx prisma migrate dev --name init --skip-seed
+    - name: Tests Unitaires
+      run: npm test
+      # Cela lancera "jest". Assure-toi d'avoir des tests qui ne nécessitent pas la BDD réelle 
+      # ou d'utiliser des "mocks" pour cette étape.
 
-      - name: Seed database
-        working-directory: app
-        run: npm run seed
-
-      # --- Lint + Tests ---
-      - name: Lint
-        working-directory: app
-        run: npx eslint . --max-warnings=0
-
-      - name: Run tests
-        working-directory: app
-        run: npm test
-
-      # --- Docker ---
-      - name: Build Docker image
-        run: |
-          docker build \
-            -t melvyn92/app:latest \
-            -t melvyn92/app:${{ github.sha }} \
-            -f docker/Dockerfile .
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Push Docker image
-        run: |
-          docker push melvyn92/app:latest
-          docker push melvyn92/app:${{ github.sha }}
-
-  deploy:
-    name: Deploy Docker Container
+  # Job 2 : Build Docker (S'exécute seulement si le Job 1 réussit)
+  build-docker:
+    needs: qualite-et-tests # Dépendance : on ne build pas si le code est mauvais
     runs-on: ubuntu-latest
-    needs: ci
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to remote server
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        run: |
-          ssh user@YOUR_SERVER_IP "
-          docker pull melvyn92/app:${{ github.sha }}
-          docker stop app || true
-          docker rm app || true
-          docker run -d -p 3000:3000 \
-            --env DATABASE_URL=${DATABASE_URL} \
-            --env JWT_SECRET=${JWT_SECRET} \
-            melvyn92/app:${{ github.sha }}"
+    - name: Récupération du code
+      uses: actions/checkout@v3
+
+    - name: Vérification de la configuration Docker Compose
+      # L'option -f permet de spécifier le chemin vers le fichier docker-compose dans le dossier 'docker'
+      run: docker compose -f docker/docker-compose.yml config
+
+    - name: Build et Démarrage des conteneurs
+      # --build force la reconstruction
+      # -d lance en arrière-plan (detached)
+      run: docker compose -f docker/docker-compose.yml up -d --build
+
+    - name: Vérification que les conteneurs tournent
+      run: docker compose -f docker/docker-compose.yml ps
