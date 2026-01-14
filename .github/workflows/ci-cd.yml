@@ -53,12 +53,12 @@ jobs:
 
     - name: Vérification de la configuration Docker Compose
       # L'option -f permet de spécifier le chemin vers le fichier docker-compose dans le dossier 'docker'
-      run: docker compose -f docker/docker-compose.yml config
+      run: docker compose -f docker-compose.yml config
 
     - name: Build et Démarrage des conteneurs
       # --build force la reconstruction
       # -d lance en arrière-plan (detached)
-      run: docker compose -f docker/docker-compose.yml up -d --build
+      run: docker compose -f docker-compose.yml up -d --build
 
     - name: Vérification que les conteneurs tournent
-      run: docker compose -f docker/docker-compose.yml ps
+      run: docker compose -f docker-compose.yml ps
