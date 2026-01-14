@@ -57,7 +57,7 @@ jobs:
 
     - name: Build et Démarrage des conteneurs
       # --build force la reconstruction
-      # -d lance en arrière-plan (detached)
+      # -d lance en arrière-plan detached
       run: docker compose -f docker-compose.yml up -d --build
 
     - name: Vérification que les conteneurs tournent
