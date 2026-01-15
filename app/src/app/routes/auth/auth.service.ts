@@ -181,3 +181,7 @@ export const updateUser = async (userPayload: any, id: number) => {
     token: generateToken(user.id),
   };
 };
+
+export const registerUser = createUser;
+export const loginUser = login;
+
