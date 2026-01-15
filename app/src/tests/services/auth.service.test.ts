@@ -1,5 +1,7 @@
 import prismaMock from '../prisma-mock';
 import { createUser, login } from '../../app/routes/auth/auth.service';
+import * as bcrypt from 'bcryptjs';
+
 
 describe('AuthService', () => {
   test('createUser should return created user', async () => {
@@ -28,7 +30,7 @@ describe('AuthService', () => {
       id: 1,
       username: 'TestUser',
       email: 'test@me',
-      password: await require('bcryptjs').hash('1234', 10),
+      password: await bcrypt.hash('1234', 10),
       bio: null,
       image: null,
     } as any);
