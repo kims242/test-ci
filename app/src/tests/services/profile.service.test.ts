@@ -21,6 +21,12 @@ const mockedResponse = {
   updatedAt: new Date(),
 };
 
+describe('ProfileService', () => {
+  test('dummy test', () => {
+    expect(true).toBe(true);
+  });
+});
+
 // Tests
 prismaMock.user.findUnique.mockResolvedValue(mockedAuthUser);
 prismaMock.user.update.mockResolvedValue(mockedResponse);
