@@ -8,21 +8,13 @@ import { User } from './user.model';
 
 const checkUserUniqueness = async (email: string, username: string) => {
   const existingUserByEmail = await prisma.user.findUnique({
-    where: {
-      email,
-    },
-    select: {
-      id: true,
-    },
+    where: { email },
+    select: { id: true },
   });
 
   const existingUserByUsername = await prisma.user.findUnique({
-    where: {
-      username,
-    },
-    select: {
-      id: true,
-    },
+    where: { username },
+    select: { id: true },
   });
 
   if (existingUserByEmail || existingUserByUsername) {
@@ -41,17 +33,9 @@ export const createUser = async (input: RegisterInput): Promise<RegisteredUser> 
   const password = input.password?.trim();
   const { image, bio, demo } = input;
 
-  if (!email) {
-    throw new HttpException(422, { errors: { email: ["can't be blank"] } });
-  }
-
-  if (!username) {
-    throw new HttpException(422, { errors: { username: ["can't be blank"] } });
-  }
-
-  if (!password) {
-    throw new HttpException(422, { errors: { password: ["can't be blank"] } });
-  }
+  if (!email) throw new HttpException(422, { errors: { email: ["can't be blank"] } });
+  if (!username) throw new HttpException(422, { errors: { username: ["can't be blank"] } });
+  if (!password) throw new HttpException(422, { errors: { password: ["can't be blank"] } });
 
   await checkUserUniqueness(email, username);
 
@@ -85,31 +69,16 @@ export const login = async (userPayload: any) => {
   const email = userPayload.email?.trim();
   const password = userPayload.password?.trim();
 
-  if (!email) {
-    throw new HttpException(422, { errors: { email: ["can't be blank"] } });
-  }
-
-  if (!password) {
-    throw new HttpException(422, { errors: { password: ["can't be blank"] } });
-  }
+  if (!email) throw new HttpException(422, { errors: { email: ["can't be blank"] } });
+  if (!password) throw new HttpException(422, { errors: { password: ["can't be blank"] } });
 
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      password: true,
-      bio: true,
-      image: true,
-    },
+    where: { email },
+    select: { id: true, email: true, username: true, password: true, bio: true, image: true },
   });
 
   if (user) {
     const match = await bcrypt.compare(password, user.password);
-
     if (match) {
       return {
         email: user.email,
@@ -122,24 +91,14 @@ export const login = async (userPayload: any) => {
   }
 
   throw new HttpException(403, {
-    errors: {
-      'email or password': ['is invalid'],
-    },
+    errors: { 'email or password': ['is invalid'] },
   });
 };
 
 export const getCurrentUser = async (id: number) => {
   const user = (await prisma.user.findUnique({
-    where: {
-      id,
-    },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      bio: true,
-      image: true,
-    },
+    where: { id },
+    select: { id: true, email: true, username: true, bio: true, image: true },
   })) as User;
 
   return {
@@ -151,15 +110,10 @@ export const getCurrentUser = async (id: number) => {
 export const updateUser = async (userPayload: any, id: number) => {
   const { email, username, password, image, bio } = userPayload;
   let hashedPassword;
-
-  if (password) {
-    hashedPassword = await bcrypt.hash(password, 10);
-  }
+  if (password) hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.update({
-    where: {
-      id: id,
-    },
+    where: { id },
     data: {
       ...(email ? { email } : {}),
       ...(username ? { username } : {}),
@@ -167,13 +121,7 @@ export const updateUser = async (userPayload: any, id: number) => {
       ...(image ? { image } : {}),
       ...(bio ? { bio } : {}),
     },
-    select: {
-      id: true,
-      email: true,
-      username: true,
-      bio: true,
-      image: true,
-    },
+    select: { id: true, email: true, username: true, bio: true, image: true },
   });
 
   return {
@@ -182,16 +130,6 @@ export const updateUser = async (userPayload: any, id: number) => {
   };
 };
 
-export const createUser = async (input: RegisterInput): Promise<RegisteredUser> => {
-  const user = await prisma.user.create({...});
-  return {
-    ...user,
-    token: generateToken(user.id),
-  };
-};
-
-
-
+// Exports pour tests
 export const registerUser = createUser;
 export const loginUser = login;
-
