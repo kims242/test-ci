@@ -182,6 +182,12 @@ export const updateUser = async (userPayload: any, id: number) => {
   };
 };
 
+return {
+  ...user,
+  token: generateToken(user.id),
+};
+
+
 export const registerUser = createUser;
 export const loginUser = login;
 
