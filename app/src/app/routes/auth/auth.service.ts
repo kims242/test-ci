@@ -188,7 +188,7 @@ export const createUser = async (input: RegisterInput): Promise<RegisteredUser> 
     ...user,
     token: generateToken(user.id),
   };
-}; // <-- bien fermer la fonction
+};
 
 
 
