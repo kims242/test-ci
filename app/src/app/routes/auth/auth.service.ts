@@ -182,10 +182,14 @@ export const updateUser = async (userPayload: any, id: number) => {
   };
 };
 
-return {
-  ...user,
-  token: generateToken(user.id),
-};
+export const createUser = async (input: RegisterInput): Promise<RegisteredUser> => {
+  const user = await prisma.user.create({...});
+  return {
+    ...user,
+    token: generateToken(user.id),
+  };
+}; // <-- bien fermer la fonction
+
 
 
 export const registerUser = createUser;
